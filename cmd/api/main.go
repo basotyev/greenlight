@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -23,9 +22,11 @@ type application struct {
 
 func main() {
 	var cfg config
-	flag.IntVar(&cfg.port, "port", 4000, "API server port")
-	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
-	flag.Parse()
+	cfg.env = "dev"
+	cfg.port = 4000
+	//flag.IntVar(&cfg.port, "port", 4000, "API server port")
+	//flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
+	//flag.Parse()
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
 
 	app := application{
@@ -33,12 +34,9 @@ func main() {
 		logger: logger,
 	}
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/v1/healthcheck", app.HealthCheckHandler)
-
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", app.config.port),
-		Handler:      mux,
+		Handler:      app.routes(),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
 		IdleTimeout:  time.Minute,
