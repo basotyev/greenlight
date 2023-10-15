@@ -1,29 +1,38 @@
 package main
 
 import (
-	"encoding/json"
+	"fmt"
 	"github.com/basotyev/greenlight/internal/data"
+	"github.com/basotyev/greenlight/internal/validator"
 	"net/http"
 	"time"
 )
 
 func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Title   string   `json:"title"`
-		Year    int32    `json:"year"`
-		Runtime int32    `json:"runtime"`
-		Genres  []string `json:"genres"`
+		Title   string       `json:"title"`
+		Year    int32        `json:"year"`
+		Runtime data.Runtime `json:"runtime"` // Make this field a data.Runtime type.
+		Genres  []string     `json:"genres"`
 	}
-	err := json.NewDecoder(r.Body).Decode(&input)
+	err := app.readJSON(w, r, &input)
 	if err != nil {
-		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
+		app.badRequestResponse(w, r, err)
 		return
 	}
-	//fmt.Fprintf(w, "%+v\n", input)
-	err = app.writeJSON(w, http.StatusOK, envelope{"input": input}, nil)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
+	movie := &data.Movie{
+		Title:   input.Title,
+		Year:    input.Year,
+		Runtime: input.Runtime,
+		Genres:  input.Genres,
 	}
+
+	v := validator.New()
+	if data.ValidateMovie(v, movie); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+	fmt.Fprintf(w, "%+v\n", input)
 }
 
 func (app *application) showMovieHandler(w http.ResponseWriter, r *http.Request) {
