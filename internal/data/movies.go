@@ -1,8 +1,10 @@
 package data
 
 import (
+	"database/sql"
 	"encoding/json"
 	"github.com/basotyev/greenlight/internal/validator"
+	"github.com/lib/pq"
 	"time"
 )
 
@@ -16,19 +18,8 @@ type Movie struct {
 	Version   int32
 }
 
-// Implement a MarshalJSON() method on the Movie struct, so that it satisfies the
-// json.Marshaler interface.
 func (m Movie) MarshalJSON() ([]byte, error) {
-	// Declare a variable to hold the custom runtime string (this will be the empty
-	// string "" by default).
 	var runtime string
-	// If the value of the Runtime field is not zero, set the runtime variable to be a
-	// string in the format "<runtime> mins".
-	// Create an anonymous struct to hold the data for JSON encoding. This has exactly
-	// the same fields, types and tags as our Movie struct, except that the Runtime
-	// field here is a string, instead of an int32. Also notice that we don't include
-	// a CreatedAt field at all (there's no point including one, because we don't want
-	// it to appear in the JSON output).
 	aux := struct {
 		ID      int64    `json:"id"`
 		Title   string   `json:"title"`
@@ -37,7 +28,6 @@ func (m Movie) MarshalJSON() ([]byte, error) {
 		Genres  []string `json:"genres,omitempty"`
 		Version int32    `json:"version"`
 	}{
-		// Set the values for the anonymous struct.
 		ID:      m.ID,
 		Title:   m.Title,
 		Year:    m.Year,
@@ -61,4 +51,28 @@ func ValidateMovie(v *validator.Validator, movie *Movie) {
 	v.Check(len(movie.Genres) >= 1, "genres", "must contain at least 1 genre")
 	v.Check(len(movie.Genres) <= 5, "genres", "must not contain more than 5 genres")
 	v.Check(validator.Unique(movie.Genres), "genres", "must not contain duplicate values")
+}
+
+type MovieModel struct {
+	DB *sql.DB
+}
+
+func (m MovieModel) Insert(movie *Movie) error {
+	query := `INSERT INTO movies (title, year, runtime, genres)
+			  VALUES ($1, $2, $3, $4)
+			  RETURNING id, created_at, version`
+	args := []interface{}{movie.Title, movie.Year, movie.Runtime, pq.Array(movie.Genres)}
+	return m.DB.QueryRow(query, args...).Scan(&movie.ID, &movie.CreatedAt, &movie.Version)
+}
+
+func (m MovieModel) Get(id int64) (*Movie, error) {
+	return nil, nil
+}
+
+func (m MovieModel) Update(movie *Movie) error {
+	return nil
+}
+
+func (m MovieModel) Delete(id int64) error {
+	return nil
 }

@@ -3,11 +3,9 @@ package main
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"flag"
 	"fmt"
-	"github.com/golang-migrate/migrate"
-	"github.com/golang-migrate/migrate/database/postgres"
+	"github.com/basotyev/greenlight/internal/data"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
 	"log"
@@ -32,6 +30,7 @@ type config struct {
 type application struct {
 	config config
 	logger *log.Logger
+	models data.Models
 }
 
 func main() {
@@ -55,23 +54,26 @@ func main() {
 	defer db.Close()
 	logger.Printf("database connection pool established")
 
-	migrationDriver, err := postgres.WithInstance(db, &postgres.Config{})
-	if err != nil {
-		logger.Fatal(err, nil)
-	}
-	migrator, err := migrate.NewWithDatabaseInstance("./migrations", "postgres", migrationDriver)
-	if err != nil {
-		logger.Fatal(err, nil)
-	}
-	err = migrator.Up()
-	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		logger.Fatal(err, nil)
-	}
+	//migrationDriver, err := postgres.WithInstance(db, &postgres.Config{
+	//	DatabaseName: "greenlight",
+	//})
+	//if err != nil {
+	//	logger.Fatal(err, nil)
+	//}
+	//migrator, err := migrate.NewWithDatabaseInstance("file://migrations", "greenlight", migrationDriver)
+	//if err != nil {
+	//	logger.Fatal(err, nil)
+	//}
+	//err = migrator.Up()
+	//if err != nil && !errors.Is(err, migrate.ErrNoChange) {
+	//	logger.Fatal(err, nil)
+	//}
 	logger.Printf("database migrations applied")
 
 	app := application{
 		config: cfg,
 		logger: logger,
+		models: data.NewModels(db),
 	}
 
 	srv := &http.Server{
