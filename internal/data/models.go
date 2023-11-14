@@ -16,10 +16,12 @@ var (
 // like a UserModel and PermissionModel, as our build progresses.
 type Models struct {
 	Movies MovieModel
+	Users  UserModel
 }
 
 func NewModels(db *sql.DB) Models {
 	return Models{
 		Movies: MovieModel{DB: db},
+		Users:  UserModel{DB: db},
 	}
 }

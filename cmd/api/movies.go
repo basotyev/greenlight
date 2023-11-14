@@ -59,7 +59,6 @@ func (app *application) showMovieHandler(w http.ResponseWriter, r *http.Request)
 		default:
 			app.serverErrorResponse(w, r, err)
 		}
-		app.logger.Println(err)
 		return
 	}
 	err = app.writeJSON(w, http.StatusOK, envelope{"movie": movie}, nil)
@@ -82,7 +81,6 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 		default:
 			app.serverErrorResponse(w, r, err)
 		}
-		app.logger.Println(err)
 		return
 	}
 	var input struct {
@@ -94,7 +92,6 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 
 	err = app.readJSON(w, r, &input)
 	if err != nil {
-		app.logger.Println("wrong body params", err)
 		app.badRequestResponse(w, r, err)
 		return
 	}
