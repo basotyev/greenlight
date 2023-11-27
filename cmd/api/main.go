@@ -4,12 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"flag"
+	"fmt"
 	"github.com/basotyev/greenlight/internal/data"
 	"github.com/basotyev/greenlight/internal/jsonlog"
 	"github.com/basotyev/greenlight/internal/mailer"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -50,10 +52,14 @@ type application struct {
 func main() {
 	var cfg config
 	cfg.env = "dev"
-	cfg.port = 4000
+	portEnv, err := strconv.Atoi(os.Getenv("PORT"))
+	if err != nil {
+		return
+	}
+	cfg.port = portEnv
 	//flag.IntVar(&cfg.port, "port", 4000, "API server port")
 	//flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
-	flag.StringVar(&cfg.db.dsn, "db-dsn", "postgres://greenlight:pa55word@localhost/greenlight?sslmode=disable", "PostgreSQL DSN")
+	flag.StringVar(&cfg.db.dsn, "db-dsn", os.Getenv("DB_CONNECTION"), "PostgreSQL DSN")
 
 	flag.IntVar(&cfg.db.maxOpenConns, "db-max-open-conns", 25, "PostgreSQL max open connections")
 	flag.IntVar(&cfg.db.maxIdleConns, "db-max-idle-conns", 25, "PostgreSQL max idle connections")
@@ -72,6 +78,7 @@ func main() {
 	flag.Parse()
 	logger := jsonlog.New(os.Stdout, jsonlog.LevelInfo)
 
+	fmt.Println(cfg.db.dsn)
 	db, err := openDB(cfg)
 	if err != nil {
 		logger.PrintFatal(err, nil)
